@@ -1,0 +1,19 @@
+{
+  "name": "blood-banya",
+  "description": "The crepiest screenshot server ever",
+  "dependencies": {
+    "body-parser": "^1.15.2",
+    "express": "^4.14.0",
+    "generic-pool": "^3.1.6",
+    "nightmare": "^2.9.1",
+    "stupid-log": "^1.0.1"
+  },
+  "version": "1.0.0",
+  "main": "index.js",
+  "devDependencies": {},
+  "author": "Alexey Taktarov <molefrog@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+}
