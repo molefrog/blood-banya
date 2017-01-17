@@ -52,7 +52,9 @@ app.get('*', async (req, response) => {
     let { browser, context } = storage.retrieve(browserRef)
 
     // Set the browser's viewport
-    let step = browser.viewport(width || 800, height || 600)
+    let step = browser.viewport(
+      Number(width || 1024),
+      Number(height || 768))
 
     // Nightmare.js behaves weird if goto() called with
     // the same page as before (sometimes it doesn't fire goto
@@ -100,4 +102,6 @@ app.get('*', async (req, response) => {
 })
 
 const port = process.env.PORT || 1337
-app.listen(port)
+app.listen(port, () => {
+  log(`Server started on port ${port}`)
+})
