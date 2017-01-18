@@ -93,6 +93,7 @@ app.get('*', async (req, response) => {
 
     // Send the image
     response.set('Content-Type', 'image/png')
+    response.attachment('boo.png')
     response.send(buffer)
   } catch (error) {
     response
