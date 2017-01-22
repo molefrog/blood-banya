@@ -51,10 +51,7 @@ app.get('*', async (req, response) => {
     const browserRef = await browserPool.acquire()
     let { browser, context } = storage.retrieve(browserRef)
 
-    // Set the browser's viewport
-    let step = browser.viewport(
-      Number(width || 1024),
-      Number(height || 768))
+    let step = browser
 
     // Nightmare.js behaves weird if goto() called with
     // the same page as before (sometimes it doesn't fire goto
@@ -67,6 +64,23 @@ app.get('*', async (req, response) => {
     } else {
       step = step.goto(path)
     }
+
+    step = step.evaluate(() => {
+      var html = document.documentElement
+
+      return {
+        width: html.scrollWidth,
+        height: html.scrollHeight
+      }
+    })
+
+    const dims = await step
+
+    const viewportWidth = Number(width || dims.width)
+    const viewportHeight = Number(height || dims.height)
+
+    // Set the browser's viewport
+    step = browser.viewport(viewportWidth, viewportHeight)
 
     // The `waitFn` query param is the name
     // of a function on a page, which returns
@@ -86,7 +100,12 @@ app.get('*', async (req, response) => {
     }
 
     context.lastPath = path
-    const buffer = await step.screenshot()
+
+    const buffer = await step.screenshot({
+      x: 0,
+      y: 0,
+      width: viewportWidth,
+      height: viewportHeight })
 
     // Releasing the browser back to the pool
     await browserPool.release(browserRef)
