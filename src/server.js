@@ -22,6 +22,9 @@ const browserPool = genericPool.createPool({
     log('Allocating new browser in the pool')
 
     const client = Nightmare({
+      // Ensure that sizes are calculated properly
+      frame: false,
+      useContentSize: true,
       show: !isProduction
     })
     return storage.push(client)
@@ -60,10 +63,34 @@ app.get('*', async (req, response) => {
     // In order to fix it we save the last visited page and
     // reload the browser.
     if (context.lastPath && context.lastPath === path) {
+      log(`Refreshing the page...`)
       step = step.refresh()
     } else {
+      log(`Navigating...`)
       step = step.goto(path)
     }
+
+    await step
+    log('Navigation completed. Disabling scroll bar.')
+
+    step = step.evaluate(() => {
+      try {
+        var style = document.createElement('style')
+        style.appendChild(
+          document.createTextNode('::-webkit-scrollbar { display:none; }'))
+
+        document.head.appendChild(style)
+      } catch (error) {
+        return error.toString()
+      }
+
+      return null
+    })
+
+    const scriptSuccess = await step
+
+    log(`Scrollbar disable result: ${scriptSuccess}`)
+    log(`Calculating page dimensions...`)
 
     step = step.evaluate(() => {
       var html = document.documentElement
@@ -75,6 +102,7 @@ app.get('*', async (req, response) => {
     })
 
     const dims = await step
+    log(`Dimensions calculated ${dims.width}x${dims.height}`)
 
     const viewportWidth = Number(width || dims.width)
     const viewportHeight = Number(height || dims.height)
@@ -88,6 +116,7 @@ app.get('*', async (req, response) => {
     const waitFnName = req.query.waitFn
 
     if (waitFnName) {
+      log(`waitFn function specified. Wait until the load is complete...`)
       step = step.wait(function (fnName) {
         var fn = window[fnName]
 
@@ -97,8 +126,11 @@ app.get('*', async (req, response) => {
 
         return fn()
       }, waitFnName)
+
+      await step
     }
 
+    log(`Smile, taking screenshot...`)
     context.lastPath = path
 
     const buffer = await step.screenshot({
@@ -109,6 +141,7 @@ app.get('*', async (req, response) => {
 
     // Releasing the browser back to the pool
     await browserPool.release(browserRef)
+    log(`Browser released to the pool`)
 
     // Send the image
     response.set('Content-Type', 'image/png')
