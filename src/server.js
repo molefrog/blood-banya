@@ -3,6 +3,8 @@ const express = require('express')
 const Nightmare = require('nightmare')
 const genericPool = require('generic-pool')
 
+const { makeFullUrl } = require('./util')
+
 const isProduction = process.env.NODE_ENV === 'production'
 
 // The pool has problems storing Nightmare objects,
@@ -43,6 +45,8 @@ app.use(bodyParser.json())
 
 app.get('*', async (req, response) => {
   try {
+    log(`New server request ${makeFullUrl(req)}`)
+
     const { width, height, path } = req.query
 
     if (!path) {
